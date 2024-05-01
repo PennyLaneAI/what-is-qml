@@ -1,0 +1,356 @@
+*Quantum machine learning (QML)* is a research area that explores the
+interplay of ideas from quantum computing and machine learning.
+
+Quantum computers can help us train classical learning models
+faster, give us new types of models, and work directly with quantum data for which there is no effective classical representation.
+On the other hand, classical machine learning is a deep and
+well-developed field. It can inspire quantum algorithms, provide
+ways to classically estimate the properties of quantum systems, and
+gives us new ways of thinking about quantum computing.
+
+* Learning from neural networks
+-----
+
+Deep neural networks have proven extremely successful for classical learning.
+Neural networks have a quantum analogue called
+[[https://pennylane.ai/qml/glossary/variational_circuit/][*variational circuits*]] or sometimes [[https://pennylane.ai/qml/glossary/quantum_neural_network/][*quantum neural networks*]] which, like classical neural
+networks, connect simple parts with parameters we can train using gradient descent.
+A common strategy for QML is to embed classical data into a variational circuit,
+train the parameters of the circuit, and terminate when some
+convergence criterion is met.
+This circuit with trained parameters is our learning model.
+
+Variational circuits come in many flavours, such as the
+[[https://pennylane.ai/qml/demos/tutorial_variational_classifier/][variational quantum classifier(VQC)]], [[https://pennylane.ai/qml/demos/tutorial_vqe/][variational quantum eigensolver
+(VQE)]],or [[https://pennylane.ai/qml/demos/tutorial_vqls/][variational quantum linear solver (VQLS)]]. These are different
+problems, and the proposed solutions use different [[https://pennylane.ai/qml/glossary/circuit_ansatz/][ansatzae]] for the structure of
+the circuit.
+
+#+ATTR_HTML: :alt ML image :align center :width 400px :style display:inline;margin:-80px;
+[[./img/Quantum_machine_learning.svg]]
+
+There are two subtleties in training these circuit models.
+The first is that, in computing the [[https://pennylane.ai/qml/glossary/quantum_gradient/][quantum gradient]] of a circuit
+model, we can't explicitly differentiate the quantum object, unlike a
+classical function. A workaround is to use something called the
+[[https://pennylane.ai/qml/glossary/parameter_shift/][*parameter-shift rule*]] to implicitly compute a gradient from evaluating
+the circuit at different points. This scales poorly in comparison to
+classical backpropagation; solutions include [[https://arxiv.org/abs/2305.13362][using multiple copies of the state]] or
+[[https://arxiv.org/abs/2306.14962][reducing expressivity]].
+
+A second problem is that, however we calculate it, for many
+circuits the gradient tends to be exponentially small, at least if our parameters
+are random. This phenomenon is called a [[https://pennylane.ai/qml/demos/tutorial_local_cost_functions/][*barren plateau*]], and it
+renders the model untrainable for large problem instances. This is
+similar in some ways to the vanishing gradients problem, but caused by
+the size of Hilbert space rather than the number of layers.
+There are many proposed solutions to barren plateaus, but also
+[[https://arxiv.org/abs/2312.09121][concerns]] that any model without such plateaus is classically
+simulable. This remains an open problem for QML.
+
+* Kernel of truth
+-----
+
+Another approach to QML is to understand the learning mechanisms at
+play in quantum computing. For instance, when we embed classical data in
+Hilbert space, it acts as a higher-dimensional [[https://arxiv.org/abs/1803.07128][*feature space*]] in
+which we can [[https://arxiv.org/abs/2001.03622][easily perform linear classification]], simply by taking
+measurements. The embedding is also closely tied to the [[https://arxiv.org/abs/2008.08605][expressive
+power]] of the circuit by [[https://pennylane.ai/qml/demos/tutorial_expressivity_fourier_series/][*Fourier series*]]. It seems that all
+the heavy lifting is in the encoding!
+
+#+ATTR_HTML: :alt ML image :align center :width 600px :style display:inline;margin:-40px;
+[[./img/quantum_computing_neural_network.svg]]
+
+Classical machine learning theory provides us with the powerful toolset of
+*kernel learning* for dealing with encoding. The basic idea is to
+replace direct, resource-internsive access to a
+higher-dimensional feature space with implicit access. The implicit
+access is the ability to check how two data poinst are in the
+higher-dimensional space; this leads to a similarity metric called the
+/kernel/, where the name "kernel learning" comes from.
+
+When we embed (labelled) classical data in a Hilbert space, we are implicitly
+specifying a "quantum kernel", and the results of kernel learning apply.
+We can thus [[https://arxiv.org/abs/2101.11020][think of QML]] in terms of kernel methods, and conversely, look for ways
+to exploit the special kernels that quantum computers give us native
+access to.
+
+* Hardware from NISQ to ISQ
+-----
+
+The success of deep learning is not just about models or algorithms;
+it's also about hardware. The fact that we can train large language
+models on internet-sized datasets is something of a miracle, but a
+miracle enabled by advances in processing power.
+For QML, this suggests we not only use the theoretical tools of quantum
+computing, but co-design with the [[https://pennylane.ai/qml/what-is-quantum-computing/][hardware]] that is at our disposal, or
+will be in the near future. Full-blown universal, fault-tolerant quantum
+computation (FTQC) is probably many years away.
+
+We live in an era of *Noisy, Intermediate-Scale Quantum (NISQ)*
+devices.
+Variational circuits are well-suited to this generation of computers.
+We can run them without the overhead needed for fault-tolerance, since
+noise is just part of the architecture; in some case, it may even be
+[[https://arxiv.org/abs/2301.06814][beneficial]]! To put the same point differently, we don't mind noise,
+since we don't need the circuit to do anything in particular other
+explore some landscape of functions in a trainable way. Checking how these
+small, error-prone devices actually perform on real data is a
+[[https://arxiv.org/abs/2403.07059][subtle and emerging art]].
+
+#+ATTR_HTML: :alt ML image :align center :width 400px :style display:inline;margin:-40px;
+[[./img/NISQ_machine_learning.svg]]
+
+In the not-too-distant future, we hope these NISQ devices will be
+upgraded to *Intermediate-Scale Quantum (ISQ)* ones, which are small (hundreds of
+logical qubits) but fault-tolerant (gate fidelity above the error
+correction threshold for many layers).
+There is a small but emerging literature on algorithms for tasks such
+as [[https://arxiv.org/abs/2102.11340][energy estimation]] in the ISQ setting; finding [[https://pennylane.ai/blog/2023/06/from-nisq-to-isq/][useful QML algorithms]]
+remains a open problem.
+
+* Speedups and symmetries
+-----
+
+We've looked at approaches to QML inspired by deep learning
+architectures, classical learning theory, and quantum hardware. But we
+have yet to consider the most natural source of inspiration: /quantum
+algorithms/, and in particular, those that have large
+(superpolynomial) speedups over classical algorithms.
+This include *Shor's algorithm*, *Simon's problem* and the
+*Deutsch-Jozsa algorithm*, as well as *Welded Trees* and the *Quantum
+Singular Value Transform (QSVT)*. It's a short list, so worth studying closely!
+
+#+ATTR_HTML: :alt ML image :align center :width 400px :style display:inline;margin:-40px;
+https://assets.cloud.pennylane.ai/pennylane_website/pages/qml/whatisqc/Quantum_advantage.svg
+
+The first three entries are all instances of a single ur-algorithm
+called the *Hidden Subgroup Problem (HSP)*.
+The basic idea is to hide a symmetry (see below) in the labels assigned by some function.
+The [[https://pennylane.ai/qml/demos/tutorial_qft_arithmetics/][*Quantum Fourier Transform (QFT)*]] can be used to query multiple
+items, attach a phase to each, and cleverly interfere them to extract
+the hidden symmetry. This suggests that quantum computers are good at
+/symmetrically interfering/ data.
+
+This interference can be reverse-engineered, and integrated into a
+"first-principles" QML model, where we leverage an existing quantum
+advantage to design a learning routine, rather than the reverse.
+And this is just one flavour of quantum speedup. Others, such as QSVT, Welded
+Trees, and [[https://arxiv.org/abs/1408.3106][topological data analysis]], may also lead to new
+first-principles approaches, and form an ongoing subject of research.
+
+* The geometry of programming
+-----
+
+We have just mentioned symmetries but haven't really explained what
+they are.
+A *symmetry* is a transformation which leaves an object, often a
+geometric object, looking the same. In quantum algorithms, the
+symmetries are usually associated with finite objects, so they are discrete. But in machine learning,
+the training landscape /itself/ can have symmetries, and is a continuous
+object.
+In this, case the symmetries are also continuous, and we can use the
+mathematics of [[https://pennylane.ai/qml/demos/tutorial_liealgebra/][*Lie algebras*]] to describe them. Surprisingly,
+these tools also turn out to be relevant to the barren plateaus
+described above!
+
+#+ATTR_HTML: :alt ML image :align center :width 600px :style display:inline;margin:-40px;
+[[./img/QML_optimization.svg]]
+
+The language of continuous symmetries turns out to be very useful for incorporating prior information,
+also called [[https://pennylane.ai/qml/demos/tutorial_contextuality/][/inductive bias/]], into the learning process. The set of
+techniques for doing this is called [[https://pennylane.ai/qml/demos/tutorial_geometric_qml/][*Geometric QML*]].
+From the viewpoint of gradient descent, local symmetries tell us
+directions we can ignore, and therefore [[https://arxiv.org/abs/2312.06752][help optimize its cost]]. 
+
+* PennyLane: the language of choice for QML research
+-----
+
+This approach is even more general that QML. Indeed, any quantum algorithm
+with continuous parameters and a measure of optimality forms a
+landscape. This landscape may have local symmetries we can incorporate
+into training the algorithm.
+This represents an approach we call [[https://pennylane.ai/qml/glossary/quantum_differentiable_programming/][*differentiable*]] or *geometric
+quantum programming*.
+
+PennyLane is an open-source software framework 
+built around the concept of quantum geometric programming.
+It seamlessly integrates classical machine learning libraries with
+quantum simulators and hardware, and provides native support for
+[[https://docs.pennylane.ai/en/stable/code/api/pennylane.gradients.param_shift.html][parameter-shifts]].
+It is purpose-built for training VQCs, with
+[[https://pennylane.ai/datasets/][a wide range of datasets]], as well as tools for
+[[https://docs.pennylane.ai/en/stable/code/qml_fourier.html][Fourier series]] and [[https://docs.pennylane.ai/en/stable/code/qml_kernels.html][kernel methods]].
+
+#+ATTR_HTML: :alt ML image :align center :width 600px :style display:inline;margin:-20px;
+[[./img/PennyLane_applications.svg]]
+
+For more advanced researchers, there is a _benchmarching suite_,
+noise modelling for NISQ, growing support for algorithm
+development in _ISQ_, and tools for _learning hidden symmetries_ and
+[[https://pennylane.ai/qml/demos/tutorial_contextuality/][inductive bias]]. Finally, for the geometrically inclined, PennyLane implements
+[[https://docs.pennylane.ai/en/stable/code/api/pennylane.SpecialUnitary.html#pennylane.SpecialUnitary][a
+wide variety of continuous symmetries]] and knows how to optimize with them. In
+short, it's the language of choice for those interested in QML research!
+
+
+* COMMENT Performance from NISQ to ISQ
+-----
+
+On the other hand, we can use classical tools such as
+*Fourier series* and *kernel learning* to characterize quantum
+models. This provides important insights into their expressivity,
+generalization and training mechanics. This
+shows that QML really is a two-way street!
+
+The success of deep learning is not just about models or algorithms;
+it's also about hardware. The fact that we can train large language
+models on internet-sized datasets is something of a miracle, but a
+miracle enabled by advances in processing power.
+For QML, this suggests we not only use the theoretical tools of quantum
+computing, but the (real or simulated) hardware at our disposal.
+We live in an era of /noisy quantum circuits/. 
+
+One advantage of vartional circuits is that they run on the devices we have
+now, and can be easily simulated. Because these devices and
+simulations are small, we cannot rely on theoretical arguments which
+only hold for very large quantum computers. Instead, we need to use
+benchmarks---performance on real datasets---to see how they
+stack up, as is standard practice in classical ML.
+
+#+ATTR_HTML: :alt ML image :align center :width 400px :style display:inline;margin:-40px;
+[[./img/NISQ_machine_learning.svg]]
+
+The quantum devices you can find in the lab right now are error-prone
+and modest in size. They
+can implement small VQCs and prove [[https://www.nature.com/articles/s41586-022-04725-x][quantum advantage]] for
+other tasks, but we don't expect them to provide useful applications
+just yet.
+In the not-too-distant future, we hope these *Noisy Intermediate-Scale
+Quantum (NISQ)* computers will be replaced by *Intermediate-Scale
+Quantum (ISQ)* ones, which are small but fault-tolerant.
+Finding useful QML algorithms for these devices is an open problem.
+
+@@html:<div style="background-color: #c8ecfdff ; padding-left: 10px; border: 1px solid
+black; line-height:0.5; border-radius: 10px; margin: 10px">@@
+
+@@html:<div style="background-color: #c8ecfdff ; padding-left: 10px; border: 1px solid
+black; line-height:0.5; border-radius: 10px; margin: 10px">@@
+
+*Key concepts:* [[https://pennylane.ai/qml/glossary/variational_circuit/][variational circuits]], [[./fourier.html][Fourier series]] and [[./kernel.html][Kernel methods]].
+@@html:</div>@@
+
+*Learn more!* To learn more about performance and device constraints,
+ check out our material on [[./benchmark.html][Benchmarking QML]], as well as [[./nisq.html][Prospects for NISQ]]
+ and [[./isq.html][QML for ISQ]].
+@@html:</div>@@
+
+* COMMENT Symmetry and inductive bias
+-----
+
+If we defeat these constraints (on size and noise), we will be rewarded with the "holy
+grail": a *Fault-Tolerant Quantum Computer (FTQC)*, where we can run
+large-scale quantum computations with negligible error. But even if we had such a device,
+what would we do with it? Variational circuits come from asking: what
+can we do with this hardware? The question now is: what do quantum
+computers do best? This is a very different beast.
+
+Quantum complexity theory suggests that quantum computers
+are best at discovering *hidden symmetries*. The quantum computer
+queries multiple items, attaches a phase to each, and interferes these
+phases cleverly to extract the result. Shor's algorithm for breaking
+RSA is a famous example.
+
+#+ATTR_HTML: :alt ML image :align center :width 600px :style display:inline;margin:-40px;
+[[./img/quantum_computing_neural_network.svg]]
+
+It turns out that quantum computers can use similar techniques to
+/learn hidden symmetries from data/. Many real-world problems display
+approximate symmetry, so we expect this not only to be fast, but
+useful! Turning things around, what does this teach us about quantum
+computing? Using tools from ML, it tells us they have an *inductive
+bias*, certain guesses they like to make more than
+others. Characterizing these biases will tell us what other problems
+quantum computers might be good at learning, and forms an exciting
+area for future research.
+
+@@html:<div style="background-color: #c8ecfdff ; padding-left: 10px; border: 1px solid
+black; line-height:0.5; border-radius: 10px; margin: 10px">@@
+
+*Learn more!* If you want to get to the forefront of QML theory,
+ have a look at our tutorials on [[./hsp.html][The Hidden Subgroup Problem]],
+ [[./oracle.html][Hidden symmetries in data]], and [[./bias.html][Inductive bias for PAC learning]].
+@@html:</div>@@
+
+* COMMENT The geometry of programming
+-----
+
+Symmetries are transformations which leave an object, often a
+geometric object, looking the same. Using ideas from geometry ---
+particularly *Lie algebras* and *fibre bundles* --- we can get insight
+into how to optimize the training of quantum models with symmetry.
+This leads to the field of *geometric QML*, which builds on
+classical ideas from geometric deep learning, and provides a
+different set of tools for thinking about inductive bias.
+
+#+ATTR_HTML: :alt ML image :align center :width 600px :style display:inline;margin:-40px;
+[[./img/QML_optimization.svg]]
+
+We can think of a QML model as a point --- representing its parameters
+--- on some higher-dimensional surface, with local symmetries that
+help optimize its cost. For quantum circuits, we perform this
+optimization using the *parameter-shift rule*, closely
+related to the Fourier series we mentioned above. But this approach is
+more general that QML. It represents an approach to building algorithms
+we call *differentiable* or *geometric quantum programming*.
+
+@@html:<div style="background-color: #c8ecfdff ; padding-left: 10px; border: 1px solid
+black; line-height:0.5; border-radius: 10px; margin: 10px">@@
+
+*Learn more!* To drill down into the geometry of QML, you can
+read more about [[./lie.html][Lie algebras]], [[./bundles.html][Fibre bundles]], and [[https://pennylane.ai/qml/demos/tutorial_geometric_qml/][Geometric QML]].
+For geometric programming more generally, try [[./shift.html][The geometry of parameter-shifts]].
+@@html:</div>@@
+
+* COMMENT PennyLane: the language of choice for QML research
+-----
+
+PennyLane is an open-source software framework 
+built around the concept of quantum geometric programming.
+It seamlessly integrates classical machine learning libraries with
+quantum simulators and hardware, and provides native support for
+[[https://docs.pennylane.ai/en/stable/code/api/pennylane.gradients.param_shift.html][parameter-shifts]].
+It is purpose-built for training VQCs, but also has tools for
+[[https://docs.pennylane.ai/en/stable/code/qml_fourier.html][extracting Fourier series]] and [[https://docs.pennylane.ai/en/stable/code/qml_kernels.html][applying kernel methods]].
+
+#+ATTR_HTML: :alt ML image :align center :width 600px :style display:inline;margin:-20px;
+[[./img/PennyLane_applications.svg]]
+
+For more advanced researchers, there is a _benchmarching suite_,
+noise modelling for NISQ, growing support for algorithm
+development in _ISQ_, and tools for _learning hidden symmetries_ and
+[[https://pennylane.ai/qml/demos/tutorial_contextuality/][inductive bias]]. For the geometrically inclined, PennyLane implements [[https://docs.pennylane.ai/en/stable/code/api/pennylane.SpecialUnitary.html#pennylane.SpecialUnitary][a
+wide variety of symmetries]] and knows how to optimize with them. In
+short, it's the language of choice for those interested in QML research!
+
+@@html:<div style="background-color: #c8ecfdff ; padding-left: 10px; border: 1px solid
+black; line-height:0.5; border-radius: 10px; margin: 10px">@@
+
+*Learn more!* To deep dive into PennyLane, check out the [[https://docs.pennylane.ai/en/stable/][documentation]], as
+well as our [[https://pennylane.ai/search/?categories=quantum%20machine%20learning][demos for QML]].
+@@html:</div>@@
+
+* COMMENT html export
+#+CREATOR: 
+#+AUTHOR: 
+#+TITLE:
+#+HTML_CONTAINER: div
+#+HTML_DOCTYPE: xhtml-strict
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="qml-style.css" ><script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script> <h1><b>What is quantum machine learning?</b></h1> <style>@import url('https://fonts.googleapis.com/css2?family=Quicksand&family=Roboto:wght@400;700&display=swap');</style>
+#+HTML_LINK_HOME:
+#+HTML_LINK_UP:
+#+HTML_MATHJAX:
+#+INFOJS_OPT:
+#+LATEX_HEADER:
+#+OPTIONS: html-postamble:nil num:nil toc:nil
